@@ -1,15 +1,15 @@
 package com.chornobuk.trades_api.entities;
 
 import com.opencsv.bean.CsvBindByName;
-import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
 
 @Data
-@Builder
+@NoArgsConstructor
 public class Trade {
     private LocalDate date;
     @CsvBindByName(column = "productName")

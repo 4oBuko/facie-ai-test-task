@@ -20,6 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class TradesControllerTest {
     private final static String PATH = "trades.csv";
     private final static String ENDPOINT_PATH = "/api/enrich";
+
     @Autowired
     private MockMvc mockMvc;
 

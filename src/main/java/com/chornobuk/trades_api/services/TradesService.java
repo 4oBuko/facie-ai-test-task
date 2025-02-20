@@ -1,21 +1,27 @@
 package com.chornobuk.trades_api.services;
 
 import com.chornobuk.trades_api.CustomIncorrectHeaderException;
+import com.chornobuk.trades_api.entities.Product;
 import com.chornobuk.trades_api.entities.Trade;
-import com.chornobuk.trades_api.entities.dtos.TradeDto;
 import com.opencsv.CSVWriter;
 import com.opencsv.ICSVWriter;
-import com.opencsv.bean.CsvToBean;
-import com.opencsv.bean.CsvToBeanBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.LinkedList;
+import java.time.format.DateTimeParseException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -25,41 +31,44 @@ public class TradesService {
     private final ProductsService service;
 
     public String enrich(MultipartFile file) {
-        List<TradeDto> dtos = readFromCsv(file);
-        List<Trade> trades = getProducts(dtos);
+        List<Trade> trades = readFromCsv(file);
         return convertToCsv(trades);
     }
 
-    private List<TradeDto> readFromCsv(MultipartFile file) {
-        try (Reader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
-            CsvToBean<TradeDto> csvToBean = new CsvToBeanBuilder<TradeDto>(reader)
-                    .withType(TradeDto.class)
-                    .withIgnoreLeadingWhiteSpace(true)
-                    .build();
-            return csvToBean.parse();
-        } catch (RuntimeException e) {
-            log.warn(e.getMessage());
-            throw  new CustomIncorrectHeaderException(e.getMessage());
-        }
-        catch (IOException e) {
+    private List<Trade> readFromCsv(MultipartFile file) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
+            String[] headers = {"date", "productId", "currency", "price"};
+            String[] fHeaders = reader.readLine().split(",");
+            if (!Arrays.equals(headers, fHeaders)) {
+                log.debug("required headers: {}  headers from file: {}", Arrays.toString(headers), Arrays.toString(fHeaders));
+                throw new CustomIncorrectHeaderException("Different headers");
+            }
+            ExecutorService executorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+            Stream<String> lines = reader.lines();
+            List<CompletableFuture<Trade>> futures = lines
+                    .map(line -> line.split(","))
+                    .map(data -> CompletableFuture.supplyAsync(() -> {
+                        Trade trade = new Trade();
+                        try {
+                            trade.setDate(LocalDate.parse(data[0], DateTimeFormatter.ofPattern("yyyyMMdd")));
+                        } catch (DateTimeParseException e) {
+                            log.warn("invalid data: \"{}\" ", data[0]);
+                            return null; // incorrect data format ignoring the row
+                        }
+                        Product product = service.getById(Long.valueOf(data[1])).orElse(null);
+                        trade.setProduct(product);
+                        trade.setCurrency(data[2]);
+                        trade.setPrice(new BigDecimal(data[3]));
+                        return trade;
+                    }, executorService))
+                    .toList();
+            return futures.stream()
+                    .map(CompletableFuture::join)
+                    .filter(Objects::nonNull)
+                    .toList();
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private List<Trade> getProducts(List<TradeDto> dtos) {
-        List<Trade> trades = new LinkedList<>();
-        for (TradeDto dto : dtos) {
-            if (dto.getDate() != null) {
-                Trade trade = Trade.builder()
-                        .date(dto.getDate())
-                        .currency(dto.getCurrency())
-                        .price(dto.getPrice())
-                        .build();
-                trade.setProduct(service.getById(dto.getProductId()).orElse(null));
-                trades.add(trade);
-            }
-        }
-        return trades;
     }
 
     private String convertToCsv(List<Trade> trades) {
@@ -80,7 +89,7 @@ public class TradesService {
                         formatter.format(t.getDate()),
                         t.getProduct() == null ? "Missing Product Name" : t.getProduct().getName(),
                         t.getCurrency(),
-                        t.getPrice().stripTrailingZeros().toString()
+                        t.getPrice().stripTrailingZeros().toPlainString()
                 };
                 csvWriter.writeNext(data);
             }

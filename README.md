@@ -1,6 +1,6 @@
 # About
 This is basic task with enriching data 
-from .csv file without any optional enhancements.
+from .csv file with stream based reading and multithreading.
 ## Requirements
 - JDK17 
 - Docker and docker-compose
@@ -46,5 +46,6 @@ For comparison, insertion one by one without batching
 all data from the given .csv file 
 (around 80k key-value pairs) took around 3 minutes.
 With batching all process take less than 10 seconds. 
+
 
 
