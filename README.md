@@ -47,5 +47,25 @@ all data from the given .csv file
 (around 80k key-value pairs) took around 3 minutes.
 With batching all process take less than 10 seconds. 
 
+## Code limitations
+- Because my implementation of the .csv file parsing the input file
+must contain only described in the task fields and in the one order.
+Those limitations can be fixed with different library that allows
+to read one line and turn it into one object
+or improved parsing method e.g. linking data to field name and read it with reflection
+- Parsing can be optimized by using redis pipelining. 
+We can parse data from .csv without making requests to redis.
+Then we split all data into chunks with certain big size, at least 1k,
+get ids of all products in the chunk, do ONE batched request to redis,
+get results and map products to the trades.
 
+## Design comments
+- I'm using custom exception to return 400 http code 
+for incorrect data in .cvs file
+
+## Improvements
+- Implement all given in task enhancements
+  - also add option for users to set format of response
+    (e.g. get input in json and return in xml, get csv data return json etc.)
+- add option for custom text for missing products
 

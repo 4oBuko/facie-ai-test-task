@@ -1,6 +1,6 @@
 package com.chornobuk.trades_api.services;
 
-import com.chornobuk.trades_api.CustomIncorrectHeaderException;
+import com.chornobuk.trades_api.exceptions.CustomIncorrectHeaderException;
 import com.chornobuk.trades_api.entities.Product;
 import com.chornobuk.trades_api.entities.Trade;
 import com.opencsv.CSVWriter;
