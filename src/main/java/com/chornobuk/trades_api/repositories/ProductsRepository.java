@@ -1,9 +1,7 @@
 package com.chornobuk.trades_api.repositories;
 
-import com.chornobuk.trades_api.entities.Product;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository

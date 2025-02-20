@@ -66,6 +66,10 @@ for incorrect data in .cvs file
 ## Improvements
 - Implement all given in task enhancements
   - also add option for users to set format of response
-    (e.g. get input in json and return in xml, get csv data return json etc.)
+    (e.g. get input in json and return in xml, get csv data 
+  return json etc.)
 - add option for custom text for missing products
 
+# Test screenshots
+My implementation of tests do show much info, but I have to add them.
+At least you can see logging of 

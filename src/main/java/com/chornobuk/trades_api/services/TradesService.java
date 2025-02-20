@@ -52,7 +52,7 @@ public class TradesService {
                         try {
                             trade.setDate(LocalDate.parse(data[0], DateTimeFormatter.ofPattern("yyyyMMdd")));
                         } catch (DateTimeParseException e) {
-                            log.warn("invalid data: \"{}\" ", data[0]);
+                            log.warn("invalid date: \"{}\" ", data[0]);
                             return null; // incorrect data format ignoring the row
                         }
                         Product product = service.getById(Long.valueOf(data[1])).orElse(null);
